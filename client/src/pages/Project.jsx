@@ -19,6 +19,16 @@ function Project() {
     setProjects(savedProjects);
   }, []);
 
+  // Save Projects
+  const saveProjects = (updatedProjects) => {
+    setProjects(updatedProjects);
+
+    localStorage.setItem(
+      "projects",
+      JSON.stringify(updatedProjects)
+    );
+  };
+
   // Add Project
   const addProject = () => {
     if (!title || !description || !members) {
@@ -30,20 +40,43 @@ function Project() {
       title,
       description,
       members: members.split(",").map((m) => m.trim()),
+      status: "Active",
     };
 
     const updatedProjects = [...projects, newProject];
 
-    setProjects(updatedProjects);
-
-    localStorage.setItem(
-      "projects",
-      JSON.stringify(updatedProjects)
-    );
+    saveProjects(updatedProjects);
 
     setTitle("");
     setDescription("");
     setMembers("");
+  };
+
+  // Toggle Active/Inactive
+  const toggleStatus = (index) => {
+    const updatedProjects = [...projects];
+
+    updatedProjects[index].status =
+      updatedProjects[index].status === "Active"
+        ? "Inactive"
+        : "Active";
+
+    saveProjects(updatedProjects);
+  };
+
+  // Delete Project
+  const deleteProject = (index) => {
+    const confirmDelete = window.confirm(
+      "Are you sure you want to delete this project?"
+    );
+
+    if (!confirmDelete) return;
+
+    const updatedProjects = projects.filter(
+      (_, i) => i !== index
+    );
+
+    saveProjects(updatedProjects);
   };
 
   return (
@@ -68,7 +101,7 @@ function Project() {
         </button>
       </div>
 
-      {/* Only Admin Can Add Projects */}
+      {/* Admin Section */}
       {user?.role === "admin" && (
         <div className="bg-white p-6 rounded-xl shadow mb-8">
           <h2 className="text-3xl font-bold mb-6">
@@ -109,7 +142,7 @@ function Project() {
         </div>
       )}
 
-      {/* Everyone Can View Projects */}
+      {/* Projects List */}
       <div className="grid md:grid-cols-2 gap-6">
         {projects.length > 0 ? (
           projects.map((project, index) => (
@@ -117,25 +150,34 @@ function Project() {
               key={index}
               className="bg-white p-6 rounded-xl shadow"
             >
+              {/* Top */}
               <div className="flex justify-between items-center mb-4">
                 <h2 className="text-3xl font-bold">
                   {project.title}
                 </h2>
 
-                <span className="bg-green-100 text-green-700 px-3 py-1 rounded-lg">
-                  Active
+                <span
+                  className={`px-3 py-1 rounded-lg text-sm ${
+                    project.status === "Active"
+                      ? "bg-green-100 text-green-700"
+                      : "bg-red-100 text-red-700"
+                  }`}
+                >
+                  {project.status}
                 </span>
               </div>
 
+              {/* Description */}
               <p className="text-gray-600 mb-6">
                 {project.description}
               </p>
 
+              {/* Members */}
               <h3 className="font-bold mb-3 text-lg">
                 Team Members:
               </h3>
 
-              <div className="flex flex-wrap gap-2">
+              <div className="flex flex-wrap gap-2 mb-6">
                 {project.members.map((member, i) => (
                   <span
                     key={i}
@@ -145,6 +187,25 @@ function Project() {
                   </span>
                 ))}
               </div>
+
+              {/* Admin Controls */}
+              {user?.role === "admin" && (
+                <div className="flex gap-4">
+                  <button
+                    onClick={() => toggleStatus(index)}
+                    className="bg-yellow-500 text-white px-4 py-2 rounded-lg"
+                  >
+                    Toggle Status
+                  </button>
+
+                  <button
+                    onClick={() => deleteProject(index)}
+                    className="bg-red-600 text-white px-4 py-2 rounded-lg"
+                  >
+                    Delete
+                  </button>
+                </div>
+              )}
             </div>
           ))
         ) : (
