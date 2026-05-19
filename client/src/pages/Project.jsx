@@ -1,238 +1,160 @@
-import { useState, useEffect } from 'react'
-import { Link } from 'react-router-dom'
+import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 
 function Project() {
+  const navigate = useNavigate();
 
-  const user =
-    JSON.parse(localStorage.getItem('user'))
+  const user = JSON.parse(localStorage.getItem("user"));
 
-  // Load projects
-  const [projects, setProjects] = useState(() => {
+  const [projects, setProjects] = useState([]);
+  const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
+  const [members, setMembers] = useState("");
 
-    const savedProjects =
-      localStorage.getItem('projects')
-
-    return savedProjects
-      ? JSON.parse(savedProjects)
-      : []
-  })
-
-  const [formData, setFormData] = useState({
-    title: '',
-    description: '',
-    members: '',
-  })
-
-  // Save projects
+  // Load Projects
   useEffect(() => {
+    const savedProjects =
+      JSON.parse(localStorage.getItem("projects")) || [];
 
-    localStorage.setItem(
-      'projects',
-      JSON.stringify(projects)
-    )
+    setProjects(savedProjects);
+  }, []);
 
-  }, [projects])
-
-  const handleChange = (e) => {
-
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value,
-    })
-  }
-
-  const addProject = (e) => {
-
-    e.preventDefault()
-
-    const newProject = {
-      id: Date.now(),
-
-      title: formData.title,
-
-      description: formData.description,
-
-      status: 'Active',
-
-      // FIXED MEMBERS ARRAY
-      members: formData.members
-        .split(',')
-        .map((member) => member.trim())
-        .filter((member) => member !== ''),
+  // Add Project
+  const addProject = () => {
+    if (!title || !description || !members) {
+      alert("Please fill all fields");
+      return;
     }
 
-    setProjects([...projects, newProject])
+    const newProject = {
+      title,
+      description,
+      members: members.split(",").map((m) => m.trim()),
+    };
 
-    setFormData({
-      title: '',
-      description: '',
-      members: '',
-    })
-  }
+    const updatedProjects = [...projects, newProject];
 
-  const deleteProject = (id) => {
+    setProjects(updatedProjects);
 
-    const updatedProjects =
-      projects.filter(
-        (project) => project.id !== id
-      )
+    localStorage.setItem(
+      "projects",
+      JSON.stringify(updatedProjects)
+    );
 
-    setProjects(updatedProjects)
-  }
+    setTitle("");
+    setDescription("");
+    setMembers("");
+  };
 
   return (
-    <div className='min-h-screen bg-gray-100 p-8'>
-
+    <div className="min-h-screen bg-gray-100 p-8">
       {/* Header */}
-      <div className='flex justify-between items-center mb-8'>
-
-        <div className='flex items-center gap-4'>
-
-          <h1 className='text-4xl font-bold'>
+      <div className="flex justify-between items-center mb-8">
+        <div className="flex items-center gap-4">
+          <h1 className="text-5xl font-bold">
             Project Management
           </h1>
 
-          <span className='bg-blue-100 text-blue-700 px-3 py-1 rounded'>
+          <span className="bg-blue-100 text-blue-700 px-4 py-2 rounded-lg">
             {user?.role}
           </span>
-
         </div>
 
-        <Link
-          to='/dashboard'
-          className='bg-black text-white px-4 py-2 rounded'
+        <button
+          onClick={() => navigate("/dashboard")}
+          className="bg-black text-white px-6 py-3 rounded-lg"
         >
           Back
-        </Link>
-
+        </button>
       </div>
 
-      {/* ADMIN ONLY */}
-      {user?.role === 'admin' && (
-
-        <div className='bg-white p-6 rounded-lg shadow mb-10'>
-
-          <h2 className='text-2xl font-bold mb-4'>
+      {/* Only Admin Can Add Projects */}
+      {user?.role === "admin" && (
+        <div className="bg-white p-6 rounded-xl shadow mb-8">
+          <h2 className="text-3xl font-bold mb-6">
             Add New Project
           </h2>
 
-          <form
-            onSubmit={addProject}
-            className='grid grid-cols-1 md:grid-cols-2 gap-4'
-          >
-
-            {/* Project Title */}
+          <div className="grid md:grid-cols-2 gap-4 mb-4">
             <input
-              type='text'
-              name='title'
-              placeholder='Project Title'
-              value={formData.title}
-              onChange={handleChange}
-              className='border p-3 rounded'
-              required
+              type="text"
+              placeholder="Project Title"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              className="border p-4 rounded-lg"
             />
 
-            {/* Members */}
             <input
-              type='text'
-              name='members'
-              placeholder='Members (Ajay, Rahul, Aman)'
-              value={formData.members}
-              onChange={handleChange}
-              className='border p-3 rounded'
-              required
+              type="text"
+              placeholder="Members (comma separated)"
+              value={members}
+              onChange={(e) => setMembers(e.target.value)}
+              className="border p-4 rounded-lg"
             />
-
-            {/* Description */}
-            <textarea
-              name='description'
-              placeholder='Project Description'
-              value={formData.description}
-              onChange={handleChange}
-              className='border p-3 rounded md:col-span-2'
-              rows='4'
-              required
-            />
-
-            {/* Submit */}
-            <button className='bg-blue-600 text-white py-3 rounded hover:bg-blue-700'>
-              Add Project
-            </button>
-
-          </form>
-
-        </div>
-
-      )}
-
-      {/* Project Cards */}
-      <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
-
-        {projects.map((project) => (
-
-          <div
-            key={project.id}
-            className='bg-white p-6 rounded-lg shadow'
-          >
-
-            <div className='flex justify-between items-center mb-4'>
-
-              <h2 className='text-2xl font-bold'>
-                {project.title}
-              </h2>
-
-              <span className='bg-green-100 text-green-700 px-3 py-1 rounded'>
-                {project.status}
-              </span>
-
-            </div>
-
-            <p className='mb-4 text-gray-600'>
-              {project.description}
-            </p>
-
-            {/* Team Members */}
-            <h3 className='font-semibold mb-2'>
-              Team Members:
-            </h3>
-
-            <div className='flex flex-wrap gap-2 mb-4'>
-
-              {project.members.map((member, index) => (
-
-                <span
-                  key={index}
-                  className='bg-gray-200 px-3 py-1 rounded-full'
-                >
-                  {member}
-                </span>
-
-              ))}
-
-            </div>
-
-            {/* ADMIN ONLY */}
-            {user?.role === 'admin' && (
-
-              <button
-                onClick={() =>
-                  deleteProject(project.id)
-                }
-                className='bg-red-500 text-white px-4 py-2 rounded'
-              >
-                Delete
-              </button>
-
-            )}
-
           </div>
 
-        ))}
+          <textarea
+            placeholder="Project Description"
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            className="border p-4 rounded-lg w-full h-32 mb-4"
+          />
 
+          <button
+            onClick={addProject}
+            className="bg-blue-600 text-white px-6 py-4 rounded-lg w-full"
+          >
+            Add Project
+          </button>
+        </div>
+      )}
+
+      {/* Everyone Can View Projects */}
+      <div className="grid md:grid-cols-2 gap-6">
+        {projects.length > 0 ? (
+          projects.map((project, index) => (
+            <div
+              key={index}
+              className="bg-white p-6 rounded-xl shadow"
+            >
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-3xl font-bold">
+                  {project.title}
+                </h2>
+
+                <span className="bg-green-100 text-green-700 px-3 py-1 rounded-lg">
+                  Active
+                </span>
+              </div>
+
+              <p className="text-gray-600 mb-6">
+                {project.description}
+              </p>
+
+              <h3 className="font-bold mb-3 text-lg">
+                Team Members:
+              </h3>
+
+              <div className="flex flex-wrap gap-2">
+                {project.members.map((member, i) => (
+                  <span
+                    key={i}
+                    className="bg-gray-200 px-4 py-2 rounded-full"
+                  >
+                    {member}
+                  </span>
+                ))}
+              </div>
+            </div>
+          ))
+        ) : (
+          <div className="text-gray-500 text-xl">
+            No Projects Added Yet
+          </div>
+        )}
       </div>
-
     </div>
-  )
+  );
 }
 
-export default Project
+export default Project;
